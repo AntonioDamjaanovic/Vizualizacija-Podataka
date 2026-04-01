@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="hr">
+
+<head>
+    <meta charset="utf-8">
+    <title>Z2-5 Linijski graf – tri skupa podataka</title>
+
+    <style>
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .line {
+            fill: none;
+            stroke-width: 3px;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 6px 10px;
+            background: #333;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+    </style>
+
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+</head>
+
+<body>
+
+    <script>
+        var raw = {
+            "undefined": ["Živorođeni", "Umrli", "Prirodni prirast"],
+            "2011.": [41.197, 51.019, -9.822],
+            "2012.": [41.771, 51.710, -9.939],
+            "2013.": [39.939, 50.386, -10.447],
+            "2014.": [39.566, 50.839, -11.273],
+            "2015.": [37.503, 54.205, -16.702],
+            "2016.": [37.537, 51.542, -14.005],
+            "2017.": [36.556, 53.477, -16.921],
+            "2018.": [36.945, 52.706, -15.761],
+            "2019.": [36.135, 51.794, -15.659],
+            "2020.": [35.845, 57.023, -21.178],
+            "2021.": [36.508, 62.712, -26.204],
+            "2022.": [33.883, 56.979, -23.096],
+            "2023.": [32.170, 51.275, -19.105],
+            "2024.": [32.069, 51.080, -19.011]
+        };
+
+        var years = Object.keys(raw).filter(k => k !== "undefined");
+
+        var jsonData = years.map(function (year) {
+            return {
+                split: year,               // X vrijednost
+                y1: raw[year][0],          // Živorođeni
+                y2: raw[year][1],          // Umrli
+                y3: raw[year][2]           // Prirodni prirast
+            };
+        });
+
+        // DIMENZIJE
+        var margin = { top: 60, right: 180, bottom: 120, left: 80 },
+            width = 960 - margin.left - margin.right,
+            height = 550 - margin.top - margin.bottom;
+
+        // SVG
+        var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // SKALE
+        var x = d3.scale.ordinal()
+            .domain(jsonData.map(function (d) { return d.split; }))
+            .rangePoints([0, width]);
+
+        var y = d3.scale.linear()
+            .domain([
+                d3.min(jsonData, d => Math.min(d.y1, d.y2, d.y3)),
+                d3.max(jsonData, d => Math.max(d.y1, d.y2, d.y3))
+            ])
+            .range([height, 0]);
+
+        // OSI
+        var xAxis = d3.svg.axis().scale(x).orient("bottom");
+        var yAxis = d3.svg.axis().scale(y).orient("left");
+
+        // NACRTAJ OSI
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-0.8em")
+            .attr("dy", "0.15em")
+            .attr("transform", "rotate(-45)");
+
+        svg.append("g")
+            .attr("class", "axis")
+            .call(yAxis);
+
+        // NASLOV GRAFA
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", -20)
+            .style("text-anchor", "middle")
+            .style("font-size", "15px")
+            .style("font-weight", "bold")
+            .text("Živorođeni, umrli i prirodni prirast po godinama (2011–2024)");
+
+
+        // NAZIV Y-OSI
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -60)
+            .attr("x", -height / 2)
+            .style("text-anchor", "middle")
+            .style("font-size", "14px")
+            .text("Broj osoba (u tisuaćama)");
+
+        // NAZIV X-OSI
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + 80)
+            .style("text-anchor", "middle")
+            .style("font-size", "14px")
+            .text("Godina");
+
+
+        // DEFINICIJA LINIJE
+        var line = d3.svg.line()
+            .x(function (d) { return x(d.split); })
+            .y(function (d) { return y(d.value); });
+
+        // PRIPREMA PODATAKA ZA CRTANJE
+        var datasets = [
+            { name: "Živorođeni", color: "#1f77b4", values: jsonData.map(d => ({ split: d.split, value: d.y1 })) },
+            { name: "Umrli", color: "#ff7f0e", values: jsonData.map(d => ({ split: d.split, value: d.y2 })) },
+            { name: "Prirodni prirast", color: "#2ca02c", values: jsonData.map(d => ({ split: d.split, value: d.y3 })) }
+        ];
+
+        // TOOLTIP
+        var tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        // CRTANJE LINIJA
+        datasets.forEach(function (ds) {
+            svg.append("path")
+                .datum(ds.values)
+                .attr("class", "line")
+                .attr("stroke", ds.color)
+                .attr("d", line);
+
+            svg.selectAll(".dot-" + ds.name)
+                .data(ds.values)
+                .enter().append("circle")
+                .attr("class", "dot-" + ds.name)
+                .attr("cx", function (d) { return x(d.split); })
+                .attr("cy", function (d) { return y(d.value); })
+                .attr("r", 4)
+                .attr("fill", ds.color)
+                .on("mouseover", function (d) {
+                    tooltip.transition().duration(200).style("opacity", .9);
+                    tooltip.html(ds.name + "<br><b>" + d.value.toLocaleString() + "</b>")
+                        .style("left", (d3.event.pageX + 10) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition().duration(300).style("opacity", 0);
+                });
+        });
+
+        // LEGENDA
+        var legend = svg.selectAll(".legend")
+            .data(datasets)
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function (d, i) { return "translate(0," + (i * 20) + ")"; });
+
+        legend.append("rect")
+            .attr("x", width + 20)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", function (d) { return d.color; });
+
+        legend.append("text")
+            .attr("x", width + 45)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .text(function (d) { return d.name; });
+
+    </script>
+
+
+</body>
+
+</html>

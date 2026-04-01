@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="hr">
+
+<head>
+    <meta charset="utf-8">
+    <title>Z2-6 Linijski graf – vremenska os</title>
+    <style>
+        .axis {
+            font: 11px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .line {
+            fill: none;
+            stroke: #377eb8;
+            stroke-width: 2.5px;
+        }
+
+        .dot {
+            fill: #377eb8;
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 6px 10px;
+            background: #333;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+</head>
+
+<body>
+    <!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="utf-8">
+    <title>Z2-6 Linijski graf – vremenska os</title>
+
+    <style>
+        .axis { font: 11px sans-serif; }
+        .axis path, .axis line { fill: none; stroke: #000; shape-rendering: crispEdges; }
+        .line { fill: none; stroke: #377eb8; stroke-width: 2.5px; }
+        .dot  { fill: #377eb8; stroke: #fff; stroke-width: 1.5px; }
+        .tooltip {
+            position: absolute;
+            padding: 6px 10px;
+            background: #333;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+    </style>
+
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+</head>
+<body>
+
+<script>
+    var raw = {
+        "undefined": ["Živorođeni", "Umrli", "Prirodni prirast"],
+        "2011.": [41.197, 51.019, -9.822],
+        "2012.": [41.771, 51.710, -9.939],
+        "2013.": [39.939, 50.386, -10.447],
+        "2014.": [39.566, 50.839, -11.273],
+        "2015.": [37.503, 54.205, -16.702],
+        "2016.": [37.537, 51.542, -14.005],
+        "2017.": [36.556, 53.477, -16.921],
+        "2018.": [36.945, 52.706, -15.761],
+        "2019.": [36.135, 51.794, -15.659],
+        "2020.": [35.845, 57.023, -21.178],
+        "2021.": [36.508, 62.712, -26.204],
+        "2022.": [33.883, 56.979, -23.096],
+        "2023.": [32.170, 51.275, -19.105],
+        "2024.": [32.069, 51.080, -19.011]
+    };
+
+    // Pretvori raw u vremensku seriju (uzima se ŽIVOROĐENE = index 0)
+    var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+    var data = Object.keys(raw)
+        .filter(k => k !== "undefined")
+        .map(function(year){
+            return {
+                datum: parseDate(year.replace(".", "") + "-01-01"),
+                vrijednost: raw[year][0] * 1000   // pretvorba u apsolutne brojeve
+            };
+        });
+
+    // DIMENZIJE
+    var margin = { top: 50, right: 40, bottom: 80, left: 90 };
+    var width  = 960 - margin.left - margin.right;
+    var height = 500 - margin.top  - margin.bottom;
+
+    var svg = d3.select("body").append("svg")
+        .attr("width",  width  + margin.left + margin.right)
+        .attr("height", height + margin.top  + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // X = vremenska os
+    var x = d3.time.scale()
+        .domain(d3.extent(data, function(d){ return d.datum; }))
+        .range([0, width]);
+
+    // Y = broj živorođenih
+    var y = d3.scale.linear()
+        .domain([
+            d3.min(data, function(d){ return d.vrijednost; }) * 0.95,
+            d3.max(data, function(d){ return d.vrijednost; }) * 1.05
+        ])
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .ticks(d3.time.years, 1)
+        .tickFormat(d3.time.format("%Y"));
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(10)
+        .tickFormat(function(d){ return d.toLocaleString(); });
+
+    var tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip").style("opacity", 0);
+
+    // X os
+    svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    // Naziv X osi
+    svg.append("text")
+        .attr("x", width / 2).attr("y", height + 55)
+        .style("text-anchor", "middle")
+        .text("Godina");
+
+    // Y os
+    svg.append("g").attr("class", "axis").call(yAxis);
+
+    // Naziv Y osi
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -75).attr("x", -height / 2).attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Broj živorođenih");
+
+    // Naslov
+    svg.append("text")
+        .attr("x", width / 2).attr("y", -20)
+        .style("text-anchor", "middle")
+        .style("font-size", "15px").style("font-weight", "bold")
+        .text("Živorođeni po godinama (2011–2024)");
+
+    // Definicija linije
+    var valueline = d3.svg.line()
+        .x(function(d){ return x(d.datum); })
+        .y(function(d){ return y(d.vrijednost); });
+
+    // Linija
+    svg.append("path")
+        .datum(data)
+        .attr("class", "line")
+        .attr("d", valueline);
+
+    // Točke
+    svg.selectAll(".dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", 5)
+        .attr("cx", function(d){ return x(d.datum); })
+        .attr("cy", function(d){ return y(d.vrijednost); })
+        .on("mouseover", function(d){
+            tooltip.transition().duration(200).style("opacity", .9);
+            tooltip.html(
+                d3.time.format("%Y")(d.datum) +
+                "<br><b>" + d.vrijednost.toLocaleString() + "</b>"
+            )
+            .style("left", (d3.event.pageX + 10) + "px")
+            .style("top",  (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(){
+            tooltip.transition().duration(300).style("opacity", 0);
+        });
+</script>
+
+</body>
+
+</html>

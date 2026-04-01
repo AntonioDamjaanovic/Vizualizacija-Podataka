@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="hr">
+
+<head>
+    <meta charset="utf-8">
+    <title>Z2-2 Stupčasti graf</title>
+    <style>
+        .axis {
+            font: 11px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 6px 10px;
+            background: #333;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+</head>
+
+<body>
+
+    <script>
+        var jsonData = [
+            { "split": "Biomedicina i zdravstvo", "split1": 20.673, "split2": 20.784 },
+            { "split": "Biotehničke znanosti", "split1": 6.846, "split2": 6.145 },
+            { "split": "Društvene znanosti", "split1": 67.555, "split2": 66.144 },
+            { "split": "Humanističke znanosti", "split1": 9.679, "split2": 9.098 },
+            { "split": "Interdisciplinarna područja znanosti", "split1": 3.300, "split2": 3.382 },
+            { "split": "Prirodne znanosti", "split1": 6.482, "split2": 6.388 },
+            { "split": "Tehničke znanosti", "split1": 40.752, "split2": 39.964 },
+            { "split": "Umjetničko područje", "split1": 3.467, "split2": 3.482 }
+        ];
+
+        // Pretvori vrijednosti u tisuće
+        jsonData.forEach(function (d) {
+            d.split1 = d.split1 * 1000;
+            d.split2 = d.split2 * 1000;
+        });
+
+        var margin = { top: 50, right: 20, bottom: 150, left: 80 };
+        var width = 960 - margin.left - margin.right;
+        var height = 550 - margin.top - margin.bottom;
+
+        var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var categories = ["2022/23", "2023/24"];
+
+        var x0 = d3.scale.ordinal()
+            .domain(jsonData.map(function (d) { return d.split; }))
+            .rangeRoundBands([0, width], 0.1);
+
+        var x1 = d3.scale.ordinal()
+            .domain(categories)
+            .rangeRoundBands([0, x0.rangeBand()]);
+
+        var y = d3.scale.linear()
+            .domain([0, d3.max(jsonData, function (d) { return Math.max(d.split1, d.split2); })])
+            .range([height, 0]);
+
+        var color = d3.scale.ordinal()
+            .domain(categories)
+            .range(["#6495ED", "#FF8C00"]);
+
+        var xAxis = d3.svg.axis().scale(x0).orient("bottom");
+        var yAxis = d3.svg.axis().scale(y).orient("left").ticks(10)
+            .tickFormat(function (d) { return (d / 1000) + "k"; });
+
+        // Tooltip
+        var tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        // X os
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("transform", "rotate(-45)");
+
+        // Y os
+        svg.append("g")
+            .attr("class", "axis")
+            .call(yAxis);
+
+        svg.append("text")
+            .attr("x", width / 2).attr("y", -20)
+            .style("text-anchor", "middle")
+            .style("font-size", "15px").style("font-weight", "bold")
+            .text("Broj studenata po područjima znanosti");
+
+        // Grupa za svaki red
+        var groups = svg.selectAll(".group")
+            .data(jsonData)
+            .enter().append("g")
+            .attr("class", "group")
+            .attr("transform", function (d) { return "translate(" + x0(d.split) + ",0)"; });
+
+        // Stupci
+        groups.selectAll("rect")
+            .data(function (d) {
+                return [
+                    { year: "2022/23", value: d.split1 },
+                    { year: "2023/24", value: d.split2 }
+                ];
+            })
+            .enter().append("rect")
+            .attr("x", function (d) { return x1(d.year); })
+            .attr("y", function (d) { return y(d.value); })
+            .attr("width", x1.rangeBand())
+            .attr("height", function (d) { return height - y(d.value); })
+            .attr("fill", function (d) { return color(d.year); })
+            .on("mouseover", function (d) {
+                tooltip.transition().duration(200).style("opacity", .9);
+                tooltip.html(d.year + "<br><b>" + d.value.toLocaleString() + "</b>")
+                    .style("left", (d3.event.pageX + 10) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function () {
+                tooltip.transition().duration(300).style("opacity", 0);
+            });
+
+        // Legenda
+        var legend = svg.selectAll(".legend")
+            .data(categories)
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function (d, i) { return "translate(0," + (i * 20) + ")"; });
+
+        legend.append("rect")
+            .attr("x", width - 18)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", color);
+
+        legend.append("text")
+            .attr("x", width - 24)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .style("text-anchor", "end")
+            .text(function (d) { return d; });
+    </script>
+</body>
+
+</html>
