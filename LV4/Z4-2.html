@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Z4-2</title>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+</head>
+
+<body>
+  <h3>a) Sve oznake iznad pite</h3>
+  <script>
+    var width = 500;
+    var height = 500;
+    var outerRadius = 200;
+    var innerRadius = 0;
+
+    var color = d3.scale.category20();
+
+    var arc = d3.svg.arc()
+        .innerRadius(innerRadius)
+        .outerRadius(outerRadius);
+
+    var data = [
+        {name: 'jabuka', value: 120},
+        {name: 'kruska', value: 2},
+        {name: 'banana', value: 90},
+        {name: 'jagoda', value: 3},
+        {name: 'ribizla', value: 60}
+    ];
+
+    var pie = d3.layout.pie()
+        .value(function(d) { return d.value; });
+
+    // ---------- a) Sve oznake iznad pite ----------
+    var svgA = d3.select("body")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var arcsA = pie(data);
+
+    // prvo nacrtaj sve lukove (path)
+    var pieGroupA = svgA.append("g")
+        .attr("transform", "translate(" + (width / 2) + ", " + (height / 2) + ")");
+
+    pieGroupA.selectAll("path")
+        .data(arcsA)
+        .enter()
+        .append("path")
+        .attr("fill", function(d, i) { return color(i); })
+        .attr("d", arc);
+
+    // pa tek onda sve tekstove (kako bi bili iznad svih lukova)
+    pieGroupA.selectAll("text")
+        .data(arcsA)
+        .enter()
+        .append("text")
+        .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
+        .attr("text-anchor", "middle")
+        .text(function(d) { return d.data.name + ": " + d.value; });
+  </script>
+
+  <h3>b) Rotirane oznake</h3>
+  <script>
+    var svgB = d3.select("body")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var pieArcsB = svgB.selectAll("g.pie")
+        .data(pie(data))
+        .enter()
+        .append("g")
+        .attr("class", "pie")
+        .attr("transform", "translate(" + (width / 2) + ", " + (height / 2) + ")");
+
+    pieArcsB.append("path")
+        .attr("fill", function(d, i) { return color(i); })
+        .attr("d", arc);
+
+    pieArcsB.append("text")
+        .attr("transform", function(d) {
+            var c = arc.centroid(d);
+            // kut sredine isječka (u stupnjevima); -90 jer SVG y os ide prema dolje
+            var angle = (d.startAngle + d.endAngle) / 2 * 180 / Math.PI - 90;
+            return "translate(" + c + ") rotate(" + angle + ")";
+        })
+        .attr("text-anchor", "middle")
+        .text(function(d) { return d.data.name + ": " + d.value; });
+  </script>
+</body>
+</html>
