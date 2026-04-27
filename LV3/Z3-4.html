@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Z3-4</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+  <svg id="svg" width="600" height="500" style="border:1px solid #ccc"></svg>
+  
+  <script>
+    const widthSVG = 600, heightSVG = 500;
+    const svg = d3.select("#svg");
+
+    const materials = [
+      { name: "Kruto", color: "#555" },
+      { name: "Elasticno", color: "#2a9d8f" },
+      { name: "Tekucina", color: "#4a90e2" }
+    ];
+
+    const rectW = 140, rectH = 30;
+    const gap = (widthSVG - materials.length * rectW) / (materials.length + 1);
+    const rectY = heightSVG - rectH - 20;
+    const r = 20;
+    const startY = 30;
+
+    const xs = materials.map((_, i) => gap + i * (rectW + gap) + rectW / 2);
+
+    materials.forEach((m, i) => {
+      svg.append("rect")
+        .attr("x", xs[i] - rectW / 2)
+        .attr("y", rectY)
+        .attr("width", rectW)
+        .attr("height", rectH)
+        .attr("fill", m.color);
+
+      svg.append("text")
+        .attr("x", xs[i])
+        .attr("y", rectY + rectH / 2 + 5)
+        .attr("text-anchor", "middle")
+        .attr("fill", "white")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 13)
+        .text(m.name);
+    });
+
+    const balls = materials.map((m, i) =>
+      svg.append("circle")
+        .attr("cx", xs[i])
+        .attr("cy", startY)
+        .attr("r", r)
+        .attr("fill", m.color)
+    );
+
+    const impactY = rectY - r;
+    const fallDur = 1200;
+
+    // kruto
+    balls[0].transition().duration(fallDur).ease(d3.easeQuadIn)
+      .attr("cy", impactY);
+
+    // elasticno
+    function bounce(ball, y0, y1, height, times) {
+      let t = ball.transition().duration(fallDur / 2).ease(d3.easeQuadIn).attr("cy", y1);
+      for (let i = 0; i < times; i++) {
+        const h = height * Math.pow(0.5, i);
+        t = t.transition().duration(400).ease(d3.easeQuadOut).attr("cy", y1 - h)
+            .transition().duration(400).ease(d3.easeQuadIn).attr("cy", y1);
+      }
+    }
+    bounce(balls[1], startY, impactY, 120, 3);
+
+    // tekucina
+    balls[2].transition().duration(fallDur).ease(d3.easeQuadIn)
+      .attr("cy", impactY)
+      .transition().duration(600)
+      .attr("cy", rectY + rectH / 2)
+      .attr("r", r * 1.4)
+      .style("opacity", 0.4);
+  </script>
+</body>
+</html>

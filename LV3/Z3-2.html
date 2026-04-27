@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Z3-2</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+  <svg id="svg" width="600" height="400" style="border:1px solid #ccc"></svg>
+  <script>
+    const widthSVG = 600, heightSVG = 400;
+    const svg = d3.select("#svg");
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function spawnSquare() {
+      const size = rand(20, 60);
+      const x = rand(0, widthSVG - size);
+      const y = rand(0, heightSVG - size);
+      const color = d3.interpolateRainbow(Math.random());
+      const d1 = rand(500, 2000);
+      const d2 = rand(2000, 5000);
+      const d3dur = rand(1000, 3000);
+
+      const rect = svg.append("rect")
+        .attr("x", x)
+        .attr("y", y)
+        .attr("width", size)
+        .attr("height", size)
+        .attr("fill", "none")
+        .attr("stroke", color)
+        .attr("stroke-width", 2);
+
+      rect.transition()
+        .delay(d1)
+        .duration(d2)
+        .attr("fill", color)
+        .on("end", () => {
+          const newSize = widthSVG / 2;
+          rect.transition()
+            .duration(d3dur)
+            .attr("x", x + size / 2 - newSize / 2)
+            .attr("y", y + size / 2 - newSize / 2)
+            .attr("width", newSize)
+            .attr("height", newSize)
+            .style("opacity", 0)
+            .on("end", () => rect.remove());
+        });
+    }
+
+    function cycle() {
+      svg.selectAll("rect").remove();
+      
+      for (let i = 0; i < 10; i++) spawnSquare();
+      setTimeout(cycle, 9000);
+    }
+
+    cycle();
+  </script>
+</body>
+</html>

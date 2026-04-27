@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Z3-5</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>body { margin: 0; background: #000; }</style>
+</head>
+
+<body>
+  <svg id="svg" width="800" height="800"></svg>
+  <script>
+  const w = 800, h = 800;
+  const svg = d3.select("#svg");
+  const cx = w / 2, cy = h / 2;
+
+  svg.append("circle")
+    .attr("cx", cx).attr("cy", cy).attr("r", 25).attr("fill", "#ffcc33");
+
+  const planets = [
+    { name: "Merkur",  orbit: 50,  r: 3, color: "#b1b1b1", period: 3 },
+    { name: "Venera",  orbit: 80,  r: 5, color: "#e8b55a", period: 6 },
+    { name: "Zemlja",  orbit: 115, r: 6, color: "#4a90e2", period: 10 },
+    { name: "Mars",    orbit: 150, r: 4, color: "#c1440e", period: 15 },
+    { name: "Jupiter", orbit: 210, r: 14, color: "#d1a877", period: 30 },
+    { name: "Saturn",  orbit: 270, r: 12, color: "#e4c48a", period: 50 },
+    { name: "Uran",    orbit: 320, r: 9, color: "#8cd3db", period: 70 },
+    { name: "Neptun",  orbit: 365, r: 9, color: "#4166f5", period: 90 }
+  ];
+
+  planets.forEach(p => {
+    svg.append("circle")
+      .attr("cx", cx).attr("cy", cy).attr("r", p.orbit)
+      .attr("fill", "none").attr("stroke", "#333").attr("stroke-width", 1);
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${cx}, ${cy})`);
+
+    g.append("circle")
+      .attr("cx", p.orbit).attr("cy", 0)
+      .attr("r", p.r).attr("fill", p.color);
+
+    function rotate() {
+      g.attr("transform", `translate(${cx}, ${cy}) rotate(0)`)
+        .transition()
+        .duration(p.period * 1000)
+        .ease(d3.easeLinear)
+        .attrTween("transform", () => t =>
+          `translate(${cx}, ${cy}) rotate(${t * 360})`)
+        .on("end", rotate);
+    }
+    rotate();
+  });
+  </script>
+</body>
+</html>

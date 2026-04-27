@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Z3-1</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+  <svg id="svg" width="600" height="400" style="border:1px solid #ccc"></svg>
+  <script>
+    const widthSVG = 600, heightSVG = 400;
+    const size = 60;
+
+    const svg = d3.select("#svg");
+
+    const rect = svg.append("rect")
+      .attr("x", widthSVG / 2 - size / 2)
+      .attr("y", heightSVG / 2 - size / 2)
+      .attr("width", size)
+      .attr("height", size)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 3);
+
+    rect.transition()
+      .delay(3000)
+      .duration(5000)
+      .attr("fill", "steelblue")
+      .on("end", () => {
+        const newSize = widthSVG / 2;
+        rect.transition()
+          .duration(2000)
+          .attr("x", widthSVG / 2 - newSize / 2)
+          .attr("y", heightSVG / 2 - newSize / 2)
+          .attr("width", newSize)
+          .attr("height", newSize)
+          .style("opacity", 0);
+      });
+  </script>
+</body>
+</html>
